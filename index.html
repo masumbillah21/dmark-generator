@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SPF, DKIM & DMARC Generator</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+<h1>SPF · DKIM · DMARC Generator</h1>
+<p class="sub">Generate the DNS TXT records for your domain's email authentication. Everything runs in your browser — keys never leave this page.</p>
+
+<div class="tabs">
+  <button class="active" data-tab="spf">SPF</button>
+  <button data-tab="dkim">DKIM</button>
+  <button data-tab="dmarc">DMARC</button>
+  <button data-tab="verify">Verify</button>
+</div>
+
+<div class="card">
+
+<!-- SPF -->
+<section id="spf" class="active">
+  <label for="spf-domain">Domain</label>
+  <input type="text" id="spf-domain" placeholder="example.com">
+
+  <label>Authorized senders</label>
+  <div class="checks">
+    <label><input type="checkbox" id="spf-mx"> MX servers (<code>mx</code>)</label>
+    <label><input type="checkbox" id="spf-a" checked> Domain A record (<code>a</code>)</label>
+  </div>
+
+  <label>Email providers <span class="hint">(adds include:)</span></label>
+  <div class="checks" id="spf-providers"></div>
+
+  <label for="spf-ips">IP addresses / ranges <span class="hint">(IPv4 or IPv6, comma or space separated)</span></label>
+  <textarea id="spf-ips" placeholder="203.0.113.5, 198.51.100.0/24, 2001:db8::/32"></textarea>
+
+  <label for="spf-inc">Other includes <span class="hint">(domains, comma or space separated)</span></label>
+  <input type="text" id="spf-inc" placeholder="mail.example.net">
+
+  <label for="spf-all">Everything else</label>
+  <select id="spf-all">
+    <option value="~all">~all — Soft fail (recommended while testing)</option>
+    <option value="-all">-all — Hard fail (reject unauthorized)</option>
+    <option value="?all">?all — Neutral</option>
+    <option value="+all">+all — Allow all (not recommended)</option>
+  </select>
+  <div class="out" id="spf-out"></div>
+</section>
+
+<!-- DKIM -->
+<section id="dkim">
+  <div class="row">
+    <div>
+      <label for="dkim-domain">Domain</label>
+      <input type="text" id="dkim-domain" placeholder="example.com">
+    </div>
+    <div>
+      <label for="dkim-selector">Selector</label>
+      <input type="text" id="dkim-selector" value="default">
+    </div>
+  </div>
+  <label for="dkim-bits">Key size</label>
+  <select id="dkim-bits">
+    <option value="2048">2048-bit (recommended)</option>
+    <option value="1024">1024-bit (legacy, shorter record)</option>
+    <option value="4096">4096-bit (may exceed DNS limits at some providers)</option>
+  </select>
+  <button class="btn primary" id="dkim-go">Generate key pair</button>
+  <div class="out" id="dkim-out" hidden></div>
+</section>
+
+<!-- DMARC -->
+<section id="dmarc">
+  <label for="dm-domain">Domain</label>
+  <input type="text" id="dm-domain" placeholder="example.com">
+
+  <div class="row">
+    <div>
+      <label for="dm-p">Policy (p)</label>
+      <select id="dm-p">
+        <option value="none">none — monitor only (start here)</option>
+        <option value="quarantine">quarantine — send to spam</option>
+        <option value="reject">reject — block</option>
+      </select>
+    </div>
+    <div>
+      <label for="dm-sp">Subdomain policy (sp)</label>
+      <select id="dm-sp">
+        <option value="">same as p</option>
+        <option value="none">none</option>
+        <option value="quarantine">quarantine</option>
+        <option value="reject">reject</option>
+      </select>
+    </div>
+  </div>
+  <div class="row">
+    <div>
+      <label for="dm-pct">Percentage applied (pct) <span class="hint">1–100</span></label>
+      <input type="text" id="dm-pct" value="100">
+    </div>
+    <div>
+      <label for="dm-fo">Failure reports (fo)</label>
+      <select id="dm-fo">
+        <option value="0">0 — all mechanisms fail</option>
+        <option value="1">1 — any mechanism fails</option>
+        <option value="d">d — DKIM fails</option>
+        <option value="s">s — SPF fails</option>
+      </select>
+    </div>
+  </div>
+  <div class="row">
+    <div>
+      <label for="dm-adkim">DKIM alignment</label>
+      <select id="dm-adkim"><option value="r">relaxed</option><option value="s">strict</option></select>
+    </div>
+    <div>
+      <label for="dm-aspf">SPF alignment</label>
+      <select id="dm-aspf"><option value="r">relaxed</option><option value="s">strict</option></select>
+    </div>
+  </div>
+  <label for="dm-rua">Aggregate report emails (rua) <span class="hint">comma separated</span></label>
+  <input type="text" id="dm-rua" placeholder="dmarc@example.com">
+  <label for="dm-ruf">Forensic report emails (ruf) <span class="hint">optional</span></label>
+  <input type="text" id="dm-ruf" placeholder="forensic@example.com">
+  <div class="out" id="dm-out"></div>
+</section>
+
+<!-- VERIFY -->
+<section id="verify">
+  <p class="note">Checks the live DNS records for your domain (via DNS-over-HTTPS) to confirm they were published correctly. Changes can take minutes to hours to propagate.</p>
+  <div class="row">
+    <div>
+      <label for="v-domain">Domain</label>
+      <input type="text" id="v-domain" placeholder="example.com">
+    </div>
+    <div>
+      <label for="v-selector">DKIM selector</label>
+      <input type="text" id="v-selector" placeholder="leave blank to auto-detect">
+    </div>
+  </div>
+  <div class="actions">
+    <button class="btn primary" id="v-go">Verify records</button>
+  </div>
+  <div class="out" id="v-out" hidden></div>
+</section>
+
+</div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
